@@ -4,7 +4,7 @@ from core.sidebar import Sidebar
 from core.theme_manager import ThemeManager
 from core.media_manager import MediaManagerCore
 from modules.clock import ClockModule
-from modules.sysinfo import SystemStatModule
+from modules.controls import ControlModule
 from modules.media import MediaModule
 
 def main():
@@ -18,8 +18,8 @@ def main():
     clock = ClockModule(theme_manager)
     sidebar.main_layout.addWidget(clock)
     
-    stats = SystemStatModule(theme_manager)
-    sidebar.main_layout.addWidget(stats)
+    controls = ControlModule(theme_manager)
+    sidebar.main_layout.addWidget(controls)
     
     media = MediaModule(media_core, theme_manager)
     sidebar.main_layout.addWidget(media)

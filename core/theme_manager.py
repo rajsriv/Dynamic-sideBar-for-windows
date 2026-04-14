@@ -1,10 +1,9 @@
-import json
 import sys
 import winreg
 import os
 import darkdetect
 from PIL import Image
-from PyQt6.QtCore import QObject, pyqtSignal, QTimer
+from PyQt6.QtCore import QObject, pyqtSignal, QTimer, QSettings
 from PyQt6.QtGui import QColor
 
 class ThemeManager(QObject):
@@ -12,6 +11,7 @@ class ThemeManager(QObject):
 
     def __init__(self):
         super().__init__()
+        self.settings = QSettings("RajSriv", "UpDock")
                                                        
         self._mode = 'system'
         self._user_name = "Raj"
@@ -32,10 +32,12 @@ class ThemeManager(QObject):
         
         self._last_wallpaper = ""
         self._autostart = False
-        self.config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
         
         self.load_settings()
         self.update_palette()
+
+        # Synchronize registry with loaded setting
+        self._update_registry(self._autostart)
 
         self.poll_timer = QTimer()
         self.poll_timer.timeout.connect(self.check_wallpaper_change)
@@ -48,8 +50,10 @@ class ThemeManager(QObject):
     def user_name(self): return self._user_name
     @user_name.setter
     def user_name(self, name):
-        self._user_name = name
-        self.themeChanged.emit()
+        if self._user_name != name:
+            self._user_name = name
+            self.save_settings()
+            self.themeChanged.emit()
 
     def set_mode(self, mode):
         self._mode = mode
@@ -82,14 +86,20 @@ class ThemeManager(QObject):
         app_name = "UpDock"
         
         if getattr(sys, 'frozen', False):
-            exe_path = sys.executable
+            exe_path = f'"{sys.executable}"'
         else:
-            exe_path = os.path.abspath(sys.argv[0])
+            main_py = os.path.abspath(sys.argv[0])
+            # If we are running main.py directly
+            if not main_py.endswith('.py'):
+                # Handle cases where sys.argv[0] might not be what we expect
+                # Use a fallback or stick to known structure
+                pass
+            exe_path = f'"{sys.executable}" "{main_py}"'
                                                                              
         try:
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_SET_VALUE)
             if enabled:
-                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, f'"{exe_path}"')
+                winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, exe_path)
             else:
                 try:
                     winreg.DeleteValue(key, app_name)
@@ -100,26 +110,20 @@ class ThemeManager(QObject):
             print(f"Error updating registry: {e}")
 
     def load_settings(self):
-        if os.path.exists(self.config_path):
-            try:
-                with open(self.config_path, 'r') as f:
-                    data = json.load(f)
-                    self._mode = data.get('mode', 'system')
-                    self._user_name = data.get('user_name', 'Raj')
-                    self._autostart = data.get('autostart', False)
-                    self.is_aura = 'aura' in self._mode
-            except: pass
+        self._mode = str(self.settings.value("mode", "system"))
+        self._user_name = str(self.settings.value("user_name", "Raj"))
+        state = self.settings.value("autostart", False)
+        # QSettings can return string or bool depending on platform/version
+        if isinstance(state, str):
+            self._autostart = state.lower() == 'true'
+        else:
+            self._autostart = bool(state)
+        self.is_aura = 'aura' in self._mode
 
     def save_settings(self):
-        data = {
-            'mode': self._mode,
-            'user_name': self._user_name,
-            'autostart': self._autostart
-        }
-        try:
-            with open(self.config_path, 'w') as f:
-                json.dump(data, f, indent=4)
-        except: pass
+        self.settings.setValue("mode", self._mode)
+        self.settings.setValue("user_name", self._user_name)
+        self.settings.setValue("autostart", self._autostart)
 
     def check_wallpaper_change(self):
         current_wp = self.get_wallpaper_path()
@@ -129,7 +133,6 @@ class ThemeManager(QObject):
             self.themeChanged.emit()
 
     def update_palette(self):
-                                                       
         eff_mode = self._mode
         if eff_mode == 'system':
             eff_mode = 'dark' if darkdetect.isDark() else 'day'

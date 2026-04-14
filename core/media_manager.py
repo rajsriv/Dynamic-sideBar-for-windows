@@ -2,7 +2,7 @@ import asyncio
 import threading
 from datetime import timedelta
 from PyQt6.QtCore import QObject, pyqtSignal, QTimer
-                                 
+
 import winsdk.system
 from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionManager as MediaManager
 from winsdk.windows.media.control import GlobalSystemMediaTransportControlsSessionPlaybackStatus
@@ -35,11 +35,36 @@ class MediaManagerCore(QObject):
         try:
             self.manager = await MediaManager.request_async()
             self.manager.add_current_session_changed(self._on_session_changed)
-            await self.update_media_info()
+            self._current_session = None
+            self._prop_token = None
+            self._playback_token = None
+            await self._setup_session()
         except Exception as e:
             print(f"Media Init Error: {e}")
 
     def _on_session_changed(self, sender, args):
+        asyncio.run_coroutine_threadsafe(self._setup_session(), self._loop)
+
+    async def _setup_session(self):
+        if self._current_session:
+            try:
+                self._current_session.remove_media_properties_changed(self._prop_token)
+                self._current_session.remove_playback_info_changed(self._playback_token)
+            except: pass
+            self._current_session = None
+
+        session = self.manager.get_current_session()
+        if session:
+            self._current_session = session
+            self._prop_token = session.add_media_properties_changed(self._on_properties_changed)
+            self._playback_token = session.add_playback_info_changed(self._on_playback_changed)
+        
+        await self.update_media_info()
+
+    def _on_properties_changed(self, sender, args):
+        asyncio.run_coroutine_threadsafe(self.update_media_info(), self._loop)
+
+    def _on_playback_changed(self, sender, args):
         asyncio.run_coroutine_threadsafe(self.update_media_info(), self._loop)
 
     async def update_media_info(self):
@@ -66,7 +91,7 @@ class MediaManagerCore(QObject):
                         buffer = Buffer(size)
                         await stream.read_async(buffer, size, InputStreamOptions.READ_AHEAD)
                         reader = DataReader.from_buffer(buffer)
-                                                                   
+                        
                         array = winsdk.system.Array("B", size)
                         reader.read_bytes(array)
                         info['art_bytes'] = bytes(array)
@@ -114,7 +139,6 @@ class MediaManagerCore(QObject):
             try:
                 info = session.get_playback_info()
                 if info.controls.is_playback_position_enabled:
-                                                              
                     success = await session.try_change_playback_position_async(timedelta(milliseconds=position_ms))
                     print(f"Seek to {position_ms}ms, Success: {success}")
                 else:
@@ -127,7 +151,6 @@ class MediaManagerCore(QObject):
         if session:
             try:
                 await session.try_toggle_play_pause_async()
-                                                             
                 await asyncio.sleep(0.1)
                 await self.update_media_info()
             except: pass
