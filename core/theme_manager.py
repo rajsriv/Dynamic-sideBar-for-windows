@@ -32,6 +32,7 @@ class ThemeManager(QObject):
         
         self._last_wallpaper = ""
         self._autostart = False
+        self._mark_style = "stroke"
         
         self.load_settings()
         self.update_palette()
@@ -109,6 +110,16 @@ class ThemeManager(QObject):
         except Exception as e:
             print(f"Error updating registry: {e}")
 
+    @property
+    def mark_style(self): return self._mark_style
+
+    @mark_style.setter
+    def mark_style(self, style):
+        if self._mark_style != style:
+            self._mark_style = style
+            self.save_settings()
+            self.themeChanged.emit()
+
     def load_settings(self):
         self._mode = str(self.settings.value("mode", "system"))
         self._user_name = str(self.settings.value("user_name", "Raj"))
@@ -118,12 +129,14 @@ class ThemeManager(QObject):
             self._autostart = state.lower() == 'true'
         else:
             self._autostart = bool(state)
+        self._mark_style = str(self.settings.value("mark_style", "stroke"))
         self.is_aura = 'aura' in self._mode
 
     def save_settings(self):
         self.settings.setValue("mode", self._mode)
         self.settings.setValue("user_name", self._user_name)
         self.settings.setValue("autostart", self._autostart)
+        self.settings.setValue("mark_style", self._mark_style)
 
     def check_wallpaper_change(self):
         current_wp = self.get_wallpaper_path()

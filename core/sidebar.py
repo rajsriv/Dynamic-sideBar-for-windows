@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPus
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QPoint, QTimer, QSize, QEvent, QPointF
 from PyQt6.QtGui import QAction, QCursor, QPainter, QColor, QPainterPath, QPen, QRadialGradient
 from .theme_manager import ThemeManager
+from .tab_bar import TabBar, SlidingStackedWidget
 
 class LavaLampBackground(QWidget):
     def __init__(self, theme_manager, parent=None):
@@ -160,12 +161,33 @@ class Sidebar(QMainWindow):
         self.lava_bg.lower()                            
         
         self.main_layout = QVBoxLayout(self.sidebar_panel)
-        self.main_layout.setContentsMargins(15, 30, 15, 30)
-        self.main_layout.setSpacing(15)
+        self.main_layout.setContentsMargins(15, 20, 15, 20)
+        self.main_layout.setSpacing(10)
         
         self.title_label = QLabel(f"Hi, {self.theme_manager.user_name} !")
         self.title_label.setObjectName("Title")
         self.main_layout.addWidget(self.title_label)
+        
+        self.tab_bar = TabBar(["Basic", "Dock", "Settings"], self.theme_manager)
+        self.main_layout.addWidget(self.tab_bar)
+        
+        self.stacked = SlidingStackedWidget()
+        self.tab_bar.tabChanged.connect(self.stacked.slide_to)
+        
+        self.tab_pages = []
+        self.tab_layouts = []
+        for _ in range(3):
+            page = QWidget()
+            page.setStyleSheet("background: transparent;")
+            page_layout = QVBoxLayout(page)
+            page_layout.setContentsMargins(0, 10, 0, 0)
+            page_layout.setSpacing(15)
+            page_layout.addStretch()
+            self.tab_pages.append(page)
+            self.tab_layouts.append(page_layout)
+            self.stacked.addWidget(page)
+        
+        self.main_layout.addWidget(self.stacked, 1)
         
         self.master_layout.addWidget(self.handle_container)
         self.master_layout.addWidget(self.sidebar_panel)
@@ -224,21 +246,6 @@ class Sidebar(QMainWindow):
         menu.setStyleSheet(f"QMenu {{ background: {self.theme_manager.colors['bg']}; color: {self.theme_manager.colors['text']}; border: 1px solid {self.theme_manager.colors['accent']}; border-radius: 6px; padding: 5px; }} QMenu::item:selected {{ background: {self.theme_manager.colors['accent']}; color: white; }}")
         
         change_name = menu.addAction("Change Name")
-        menu.addSeparator()
-        
-        menu.addAction("System").triggered.connect(lambda: self.theme_manager.set_mode('system'))
-        menu.addAction("Day").triggered.connect(lambda: self.theme_manager.set_mode('day'))
-        menu.addAction("Dark").triggered.connect(lambda: self.theme_manager.set_mode('dark'))
-        menu.addAction("Day Aura").triggered.connect(lambda: self.theme_manager.set_mode('day_aura'))
-        menu.addAction("Dark Aura").triggered.connect(lambda: self.theme_manager.set_mode('dark_aura'))
-        
-        menu.addSeparator()
-        
-        autostart_action = menu.addAction("Launch at Startup")
-        autostart_action.setCheckable(True)
-        autostart_action.setChecked(self.theme_manager.autostart)
-        autostart_action.triggered.connect(lambda checked: setattr(self.theme_manager, 'autostart', checked))
-        
         menu.addSeparator()
         exit_app = menu.addAction("Exit App")
         
