@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 import sys
 import random
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMenu, QInputDialog

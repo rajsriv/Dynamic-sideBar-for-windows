@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 import sys
 from PyQt6.QtWidgets import QApplication
 from core.sidebar import Sidebar

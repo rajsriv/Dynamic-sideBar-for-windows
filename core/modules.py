@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QFrame
 from PyQt6.QtCore import QTimer
 

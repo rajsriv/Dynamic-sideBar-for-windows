@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 import math
 import random
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QPushButton

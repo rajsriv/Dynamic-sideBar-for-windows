@@ -1,3 +1,4 @@
+<!-- Creator : github.com/rajsriv -->
 # Dynamic SideBar for Windows 11
 
 ![SideBar Intro](assets/sidebar_intro.jpg)

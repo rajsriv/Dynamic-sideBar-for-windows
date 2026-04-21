@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 from PyQt6.QtWidgets import QLabel
 from PyQt6.QtCore import QTime, QDate, Qt
 from core.modules import BaseModule

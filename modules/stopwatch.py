@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 from PyQt6.QtWidgets import QLabel, QHBoxLayout, QWidget
 from PyQt6.QtCore import Qt, QTimer, QElapsedTimer, QRectF
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont

@@ -1,3 +1,4 @@
+# Creator : github.com/rajsriv
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QStackedWidget, QVBoxLayout, QGraphicsOpacityEffect
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QParallelAnimationGroup, pyqtSignal, pyqtProperty, QPoint, QTimer
 from PyQt6.QtGui import QPainter, QColor, QFont
