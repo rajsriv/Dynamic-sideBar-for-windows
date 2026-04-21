@@ -344,6 +344,10 @@ class SettingsModule(BaseModule):
         self.autostart_row.toggle.callback = self._on_autostart_changed
         self.layout.addWidget(self.autostart_row)
 
+        self.box_fix_row = SettingRow("Box Fix", self.theme_manager)
+        self.box_fix_row.toggle.callback = self._on_box_fix_changed
+        self.layout.addWidget(self.box_fix_row)
+
         self.mark_row = SettingPickerRow("Calendar Marks", ["Stroke", "Underline"], self.theme_manager)
         self.mark_row.picker.callback = self._on_mark_style_changed
         self.layout.addWidget(self.mark_row)
@@ -354,6 +358,9 @@ class SettingsModule(BaseModule):
 
     def _on_autostart_changed(self, checked):
         self.theme_manager.autostart = checked
+
+    def _on_box_fix_changed(self, checked):
+        self.theme_manager.box_fix = checked
 
     def _on_mark_style_changed(self, label):
         self.theme_manager.mark_style = label.lower()
@@ -366,6 +373,12 @@ class SettingsModule(BaseModule):
                 self.autostart_row.toggle._checked = current
                 self.autostart_row.toggle._knob_x = 24.0 if current else 4.0
                 self.autostart_row.toggle.update()
+        if hasattr(self, 'box_fix_row'):
+            current = self.theme_manager.box_fix
+            if self.box_fix_row.toggle._checked != current:
+                self.box_fix_row.toggle._checked = current
+                self.box_fix_row.toggle._knob_x = 24.0 if current else 4.0
+                self.box_fix_row.toggle.update()
         if hasattr(self, 'mark_row'):
             idx = 0 if self.theme_manager.mark_style == "stroke" else 1
             if self.mark_row.picker._selected != idx:

@@ -33,6 +33,7 @@ class ThemeManager(QObject):
         
         self._last_wallpaper = ""
         self._autostart = False
+        self._box_fix = False
         self._mark_style = "stroke"
         
         self.load_settings()
@@ -83,6 +84,17 @@ class ThemeManager(QObject):
             self.save_settings()
             self.themeChanged.emit()
 
+    @property
+    def box_fix(self):
+        return self._box_fix
+
+    @box_fix.setter
+    def box_fix(self, enabled):
+        if self._box_fix != enabled:
+            self._box_fix = enabled
+            self.save_settings()
+            self.themeChanged.emit()
+
     def _update_registry(self, enabled):
         key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
         app_name = "UpDock"
@@ -130,6 +142,13 @@ class ThemeManager(QObject):
             self._autostart = state.lower() == 'true'
         else:
             self._autostart = bool(state)
+            
+        bf_state = self.settings.value("box_fix", False)
+        if isinstance(bf_state, str):
+            self._box_fix = bf_state.lower() == 'true'
+        else:
+            self._box_fix = bool(bf_state)
+
         self._mark_style = str(self.settings.value("mark_style", "stroke"))
         self.is_aura = 'aura' in self._mode
 
@@ -137,6 +156,7 @@ class ThemeManager(QObject):
         self.settings.setValue("mode", self._mode)
         self.settings.setValue("user_name", self._user_name)
         self.settings.setValue("autostart", self._autostart)
+        self.settings.setValue("box_fix", self._box_fix)
         self.settings.setValue("mark_style", self._mark_style)
 
     def check_wallpaper_change(self):

@@ -125,6 +125,11 @@ class Sidebar(QMainWindow):
         self.check_timer.start(100)
         
         self.theme_manager.themeChanged.connect(self.update_style)
+        
+        self.hover_timer = QTimer()
+        self.hover_timer.setSingleShot(True)
+        self.hover_timer.setInterval(100)
+        self.hover_timer.timeout.connect(self.expand)
 
     def init_geometry(self):
         screen = self.screen()
@@ -204,6 +209,8 @@ class Sidebar(QMainWindow):
             self.lava_bg.timer.start()
         else:
             self.lava_bg.timer.stop()
+        
+        self.handle_container.setVisible(not self.theme_manager.box_fix)
 
     def handle_drag(self, delta_x):
         new_x = self._start_window_x + delta_x
@@ -217,17 +224,31 @@ class Sidebar(QMainWindow):
         else: self.collapse()
 
     def check_mouse_pos(self):
+        pos = QCursor.pos()
         if self.is_expanded and not self.handle_btn._dragging:
-            if not self.geometry().contains(QCursor.pos()) and not self.isActiveWindow():
+            if not self.geometry().contains(pos) and not self.isActiveWindow():
                 self.collapse()
+        elif not self.is_expanded and self.theme_manager.box_fix:
+            if self.geometry().contains(pos):
+                if not self.hover_timer.isActive():
+                    self.hover_timer.start()
+            else:
+                self.hover_timer.stop()
 
     def expand(self):
         if self.animation.state() == QPropertyAnimation.State.Running: self.animation.stop()
+        self.hover_timer.stop()
         self.is_expanded = True
         self.handle_btn.is_flipped = True
         self.handle_btn.update()
-        tw = self.sidebar_width + self.handle_width
-        end_rect = QRect(int(self.floating_right_edge - tw), self.y_pos, tw, self.bar_height)
+        
+        if self.theme_manager.box_fix:
+            tw = self.sidebar_width
+            end_rect = QRect(int(self.floating_right_edge - tw), self.y_pos, tw, self.bar_height)
+        else:
+            tw = self.sidebar_width + self.handle_width
+            end_rect = QRect(int(self.floating_right_edge - tw), self.y_pos, tw, self.bar_height)
+            
         self.animation.setStartValue(self.geometry()); self.animation.setEndValue(end_rect); self.animation.start()
         self.activateWindow()
 
@@ -236,8 +257,15 @@ class Sidebar(QMainWindow):
         self.is_expanded = False
         self.handle_btn.is_flipped = False
         self.handle_btn.update()
-        tw = self.sidebar_width + self.handle_width
-        end_rect = QRect(int(self.abs_right_edge - self.handle_width), self.y_pos, tw, self.bar_height)
+        
+        if self.theme_manager.box_fix:
+            sliver = 10
+            tw = self.sidebar_width
+            end_rect = QRect(int(self.abs_right_edge - sliver), self.y_pos, tw, self.bar_height)
+        else:
+            tw = self.sidebar_width + self.handle_width
+            end_rect = QRect(int(self.abs_right_edge - self.handle_width), self.y_pos, tw, self.bar_height)
+            
         if animate:
             self.animation.setStartValue(self.geometry()); self.animation.setEndValue(end_rect); self.animation.start()
         else: self.setGeometry(end_rect)
